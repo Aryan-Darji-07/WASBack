@@ -6,6 +6,8 @@ process.on('unhandledRejection', (reason) => {
   // finishes — the session is already safely saved to disk, so this is harmless.
   const msg = reason?.message || String(reason);
   if (msg.includes('ENOENT') && msg.includes('wwebjs_temp_session')) return;
+  if (msg.includes('Execution context was destroyed')) return;
+  if (msg.includes('ProtocolError')) return;
   console.error('[Process] Unhandled rejection:', reason);
 });
 process.on('uncaughtException', (err) => {

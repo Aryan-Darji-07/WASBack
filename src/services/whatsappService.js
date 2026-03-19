@@ -30,6 +30,7 @@ function resolveChromePath() {
   } catch {}
   // Scan all known cache dirs
   const bases = [
+    '/opt/render/project/src/.cache/puppeteer/chrome/',
     '/opt/render/.cache/puppeteer/chrome/',
     `${process.env.HOME || '/root'}/.cache/puppeteer/chrome/`,
     '/root/.cache/puppeteer/chrome/',

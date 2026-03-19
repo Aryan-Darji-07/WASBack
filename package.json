@@ -1,0 +1,30 @@
+{
+  "name": "whatsapp-scheduler-backend",
+  "version": "1.0.0",
+  "description": "WhatsApp Scheduler Backend",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "moment-timezone": "^0.5.45",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.9.8",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^8.0.2",
+    "qrcode": "^1.5.3",
+    "sharp": "^0.34.5",
+    "socket.io": "^4.7.5",
+    "uuid": "^9.0.1",
+    "whatsapp-web.js": "^1.34.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

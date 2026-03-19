@@ -223,16 +223,33 @@ async function initializeClient(userId) {
     puppeteerConfig.executablePath = CHROME_PATH;
   }
 
+  const clientId = `user-${userId}`;
+
   const waClient = new Client({
     authStrategy: new RemoteAuth({
-      clientId: `user-${userId}`,
+      clientId,
       store,
-      backupSyncIntervalMs: 60000,
+      backupSyncIntervalMs: 60000, // save every 20s — faster for Render
     }),
     puppeteer: puppeteerConfig,
   });
 
   state.client = waClient;
+
+  // Helper: attempt session save with retries
+  async function trySaveSession(label) {
+    const tempZip = `RemoteAuth-${clientId}.zip`;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await store.save({ session: tempZip });
+        console.log(`[WA:${userId}] Session save OK (${label}, attempt ${attempt})`);
+        return;
+      } catch (err) {
+        console.warn(`[WA:${userId}] Session save attempt ${attempt} failed (${label}):`, err.message);
+        if (attempt < 3) await new Promise(r => setTimeout(r, 5000 * attempt));
+      }
+    }
+  }
 
   waClient.on('qr', async (qr) => {
     try {
@@ -249,29 +266,18 @@ async function initializeClient(userId) {
     state.status   = 'connected';
     state.qrBase64 = null;
     emitToUser(userId, 'wa:ready', {});
+    emitToUser(userId, 'wa:status', { status: 'connected', qr: null });
     console.log(`[WA:${userId}] Client is ready`);
-    setTimeout(async () => {
-      try {
-        const tempZip = `RemoteAuth-user-${userId}.zip`;
-        await store.save({ session: tempZip });
-        console.log(`[WA:${userId}] Post-ready session save OK`);
-      } catch (saveErr) {
-        console.warn(`[WA:${userId}] Post-ready session save skipped:`, saveErr.message);
-      }
-    }, 30000);
+    // Save at 10s and again at 40s to ensure session is persisted
+    setTimeout(() => trySaveSession('post-ready-10s'), 10000);
+    setTimeout(() => trySaveSession('post-ready-40s'), 40000);
   });
 
   waClient.on('authenticated', () => {
     console.log(`[WA:${userId}] Authenticated`);
-    setTimeout(async () => {
-      try {
-        const tempZip = `RemoteAuth-user-${userId}.zip`;
-        await store.save({ session: tempZip });
-        console.log(`[WA:${userId}] Post-auth session save OK`);
-      } catch (saveErr) {
-        console.warn(`[WA:${userId}] Post-auth save skipped:`, saveErr.message);
-      }
-    }, 15000);
+    // wwebjs writes its zip ~5-10s after auth event — try at 8s then 20s
+    setTimeout(() => trySaveSession('post-auth-8s'),  8000);
+    setTimeout(() => trySaveSession('post-auth-20s'), 20000);
   });
 
   waClient.on('auth_failure', async (msg) => {

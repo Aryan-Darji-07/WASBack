@@ -5,6 +5,7 @@ const http   = require('http');
 const pool   = require('../config/db');
 const MySQLStore = require('../config/waStore');
 const { sendWADisconnectAlert } = require('./emailService');
+const fs = require('fs');
 
 // Optional: sharp for WebP compression. Falls back to raw JPEG if not installed.
 let sharp = null;
@@ -210,20 +211,32 @@ async function initializeClient(userId) {
       store,
       backupSyncIntervalMs: 60000, // save session every 1 min
     }),
-    puppeteer: {
-      headless: true,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu',
-      ],
-    },
+   puppeteer: {
+  headless: true,
+  executablePath: (() => {
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH;
+    try {
+      const base = '/opt/render/.cache/puppeteer/chrome/';
+      if (fs.existsSync(base)) {
+        for (const dir of fs.readdirSync(base)) {
+          const p = `${base}${dir}/chrome-linux64/chrome`;
+          if (fs.existsSync(p)) { console.log('[WA] Chrome:', p); return p; }
+        }
+      }
+    } catch {}
+    return undefined;
+  })(),
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-accelerated-2d-canvas',
+    '--no-first-run',
+    '--no-zygote',
+    '--single-process',
+    '--disable-gpu',
+  ],
+},
   });
 
   state.client = waClient;
